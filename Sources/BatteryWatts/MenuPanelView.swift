@@ -84,11 +84,11 @@ struct MenuPanelView: View {
                         .font(.caption)
                         .foregroundStyle(.blue)
                     Spacer()
-                    Button(updater.isDownloading ? "Downloading…" : "Install Update") {
-                        updater.downloadAndOpenUpdate()
+                    Button(updater.isInstalling ? "Installing…" : "Install Update") {
+                        updater.installUpdate()
                     }
                     .controlSize(.small)
-                    .disabled(updater.isDownloading)
+                    .disabled(updater.isInstalling)
                 }
                 if let status = updater.statusMessage {
                     Text(status).font(.caption2).foregroundStyle(.secondary)

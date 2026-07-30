@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 enum MenuBarDisplayMode: String, CaseIterable, Identifiable {
     case nothing
@@ -18,14 +19,18 @@ enum MenuBarDisplayMode: String, CaseIterable, Identifiable {
     }
 }
 
-/// Modern, flat battery glyph modeled on the iOS status bar battery:
-/// a translucent capsule track, a solid fill sized to the charge level,
-/// and the reading (percent / time left / watts) punched out of the glyph
-/// as an alpha cutout — so it stays crisp over any fill color, in light or
-/// dark menu bars, even if the system renders the item as a template.
+/// Flat, modern battery glyph modeled on the iOS status bar battery:
+/// translucent capsule track, solid fill sized to the charge level, and the
+/// reading (percent / time / watts) punched out of the shape as a cutout.
+///
+/// The glyph is drawn offscreen into an image before it reaches the menu
+/// bar — the status item pipeline drops blend modes when compositing live
+/// views (which erased the battery shape entirely in 1.1.0), but it shows
+/// pre-rendered images pixel-for-pixel.
 struct BatteryGlyph: View {
     let snapshot: BatterySnapshot
     let mode: MenuBarDisplayMode
+    let darkMenuBar: Bool
 
     private let bodyHeight: CGFloat = 13
     private let cornerRadius: CGFloat = 4
@@ -34,36 +39,40 @@ struct BatteryGlyph: View {
         switch mode {
         case .nothing: return 25
         case .percent: return 27
-        case .watts: return 31
         case .time: return 38
+        case .watts: return 36
         }
     }
+
+    private var baseColor: Color { darkMenuBar ? .white : .black }
+    private var chargeGreen: Color { Color(red: 0.20, green: 0.78, blue: 0.35) }
+    private var lowRed: Color { Color(red: 1.00, green: 0.23, blue: 0.19) }
 
     var body: some View {
         HStack(spacing: 1.5) {
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(Color.primary.opacity(0.36))
+                    .fill(baseColor.opacity(0.35))
 
                 Rectangle()
                     .fill(fillColor)
                     .frame(width: fillWidth)
-                    .clipShape(RoundedRectangle(cornerRadius: 1.5, style: .continuous))
 
                 readoutOverlay
                     .frame(width: bodyWidth, height: bodyHeight)
                     .blendMode(.destinationOut)
             }
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .frame(width: bodyWidth, height: bodyHeight)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .compositingGroup()
 
             // the nub
             RoundedRectangle(cornerRadius: 1, style: .continuous)
-                .fill(Color.primary.opacity(0.5))
+                .fill(baseColor.opacity(0.5))
                 .frame(width: 2, height: 4.5)
         }
-        .frame(height: 15)
+        .padding(.vertical, 1)
+        .padding(.horizontal, 1)
     }
 
     // MARK: - Pieces
@@ -72,7 +81,7 @@ struct BatteryGlyph: View {
     private var readoutOverlay: some View {
         if snapshot.state != .noBattery {
             HStack(spacing: 1) {
-                if snapshot.state == .charging {
+                if snapshot.state == .charging && mode != .watts {
                     Image(systemName: "bolt.fill")
                         .font(.system(size: 7, weight: .bold))
                 }
@@ -81,7 +90,7 @@ struct BatteryGlyph: View {
                         .font(.system(size: 9.5, weight: .bold, design: .rounded))
                         .monospacedDigit()
                         .lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                        .minimumScaleFactor(0.65)
                 }
             }
         }
@@ -96,8 +105,17 @@ struct BatteryGlyph: View {
         case .watts:
             let magnitude = abs(snapshot.smoothedWatts)
             if magnitude < 0.05 { return "0W" }
-            if magnitude >= 10 { return String(format: "%.0fW", magnitude) }
-            return String(format: "%.1fW", magnitude)
+            let number = magnitude >= 10
+                ? String(format: "%.0f", magnitude)
+                : String(format: "%.1f", magnitude)
+            switch snapshot.state {
+            case .charging:
+                return "▴\(number)W"
+            case .discharging:
+                return "▾\(number)W"
+            default:
+                return "\(number)W"
+            }
         case .time:
             let minutes: Int?
             switch snapshot.state {
@@ -106,7 +124,6 @@ struct BatteryGlyph: View {
             default: minutes = nil
             }
             guard let minutes else {
-                // Still estimating on battery/charge; nothing to show when full or idle.
                 return (snapshot.state == .charging || snapshot.state == .discharging) ? "–" : nil
             }
             let hours = minutes / 60
@@ -125,11 +142,11 @@ struct BatteryGlyph: View {
     private var fillColor: Color {
         switch snapshot.state {
         case .noBattery:
-            return Color.primary.opacity(0.5)
+            return baseColor.opacity(0.5)
         case .charging, .charged, .pluggedIdle:
-            return .green
+            return chargeGreen
         case .discharging:
-            return snapshot.percent <= 20 ? .red : .primary
+            return snapshot.percent <= 20 ? lowRed : baseColor
         }
     }
 }
@@ -137,11 +154,26 @@ struct BatteryGlyph: View {
 struct MenuBarLabel: View {
     @ObservedObject var monitor: PowerMonitor
     @AppStorage(DefaultsKey.menuBarDisplayMode) private var displayModeRaw = MenuBarDisplayMode.percent.rawValue
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        BatteryGlyph(
+        let glyph = BatteryGlyph(
             snapshot: monitor.snapshot,
-            mode: MenuBarDisplayMode(rawValue: displayModeRaw) ?? .percent
+            mode: MenuBarDisplayMode(rawValue: displayModeRaw) ?? .percent,
+            darkMenuBar: colorScheme == .dark
         )
+        if let image = renderedImage(for: glyph) {
+            Image(nsImage: image)
+        } else {
+            glyph
+        }
+    }
+
+    private func renderedImage(for glyph: BatteryGlyph) -> NSImage? {
+        let renderer = ImageRenderer(content: glyph)
+        renderer.scale = max(2, NSScreen.main?.backingScaleFactor ?? 2)
+        guard let image = renderer.nsImage else { return nil }
+        image.isTemplate = false
+        return image
     }
 }

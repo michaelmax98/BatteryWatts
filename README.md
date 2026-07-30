@@ -30,7 +30,7 @@ Requires macOS 13 Ventura or later. No special permissions — battery data is r
 ## Features
 
 - **Live battery wattage** — positive and green while charging (energy flowing into the battery), and the real-time draw while on battery. Read from IOKit's instantaneous amperage × voltage at 1 Hz.
-- **iOS-style battery icon** — modern and flat, with the reading punched into the battery shape. Choose what it shows inside: **nothing**, **percentage** (like `75`), **time remaining** (like `6h35m`; time to full while charging), or **live watts** (into the battery when plugged in, being drawn from it when not). Green while on power, red when low.
+- **iOS-style battery icon** — modern and flat, with the reading punched into the battery shape. Choose what it shows inside: **nothing**, **percentage** (like `75`), **time remaining** (like `6h35m`; time to full while charging), or **live watts** with a direction arrow — `▴26W` charging into the battery, `▾8.4W` being drawn from it. Green while on power, red when low.
 - **Time estimates** — time to full / time remaining, same numbers as the system battery menu.
 - **Details panel** — charger wattage, volts × amps, battery health, cycle count.
 - **In-app updates** — the app checks this repo's Releases page and can download and open the new version for you.
@@ -38,7 +38,7 @@ Requires macOS 13 Ventura or later. No special permissions — battery data is r
 
 ## Updates
 
-BatteryWatts checks GitHub for a new release every few hours (and there's a **Check for Updates** button in the panel). When one is available, click **Install Update** — the new DMG downloads and opens; drag to Applications to finish.
+BatteryWatts checks GitHub for a new release every few hours (and there's a **Check for Updates** button in the panel). When one is available, click **Install Update** — the app downloads the new version, verifies it against the sha256 GitHub publishes for the release, swaps itself in place, and relaunches. One click, no dragging.
 
 ## Build from source
 

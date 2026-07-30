@@ -1,9 +1,11 @@
 import Foundation
 import AppKit
 import Combine
+import CryptoKit
 
-/// Checks the GitHub Releases feed for a newer version, and can download the
-/// new DMG and open it so the user finishes the update with one drag.
+/// Checks the GitHub Releases feed for a newer version and installs it in
+/// place: download the DMG, verify its published sha256, mount it, swap the
+/// app bundle, strip quarantine, and relaunch — one click, no dragging.
 final class UpdateChecker: ObservableObject {
     static let shared = UpdateChecker()
     static let repoSlug = "michaelmax98/BatteryWatts"
@@ -12,8 +14,10 @@ final class UpdateChecker: ObservableObject {
     @Published private(set) var releasePage: URL?
     @Published private(set) var dmgURL: URL?
     @Published private(set) var isChecking = false
-    @Published private(set) var isDownloading = false
+    @Published private(set) var isInstalling = false
     @Published private(set) var statusMessage: String?
+
+    private var expectedSHA256: String?
 
     /// nil when running unbundled via `swift run`; updates are disabled then.
     var currentVersion: String? {
@@ -38,10 +42,13 @@ final class UpdateChecker: ObservableObject {
         timer?.invalidate()
     }
 
+    // MARK: - Checking
+
     private struct Release: Decodable {
         struct Asset: Decodable {
             let name: String
             let browser_download_url: String
+            let digest: String?
         }
         let tag_name: String
         let html_url: String
@@ -62,6 +69,7 @@ final class UpdateChecker: ObservableObject {
             var newVersion: String?
             var page: URL?
             var dmg: URL?
+            var sha: String?
             var message: String?
             if let data, let release = try? JSONDecoder().decode(Release.self, from: data) {
                 let latest = release.tag_name.hasPrefix("v")
@@ -72,6 +80,7 @@ final class UpdateChecker: ObservableObject {
                     page = URL(string: release.html_url)
                     if let asset = release.assets.first(where: { $0.name.hasSuffix(".dmg") }) {
                         dmg = URL(string: asset.browser_download_url)
+                        sha = asset.digest?.replacingOccurrences(of: "sha256:", with: "")
                     }
                 } else if userInitiated {
                     message = "You're up to date (v\(current))."
@@ -84,44 +93,146 @@ final class UpdateChecker: ObservableObject {
                 self.availableVersion = newVersion
                 self.releasePage = page
                 self.dmgURL = dmg
+                self.expectedSHA256 = sha
                 if let message { self.statusMessage = message }
             }
         }.resume()
     }
 
-    func downloadAndOpenUpdate() {
+    // MARK: - Installing
+
+    func installUpdate() {
+        guard !isInstalling else { return }
         guard let downloadURL = dmgURL else {
             if let releasePage { NSWorkspace.shared.open(releasePage) }
             return
         }
         DispatchQueue.main.async {
-            self.isDownloading = true
-            self.statusMessage = nil
+            self.isInstalling = true
+            self.statusMessage = "Downloading update…"
         }
         URLSession.shared.downloadTask(with: downloadURL) { [weak self] tempURL, _, _ in
             guard let self else { return }
-            var opened = false
-            if let tempURL,
-               let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first {
-                let dest = downloads.appendingPathComponent(downloadURL.lastPathComponent)
-                try? FileManager.default.removeItem(at: dest)
-                if (try? FileManager.default.moveItem(at: tempURL, to: dest)) != nil {
-                    NSWorkspace.shared.open(dest)
-                    opened = true
-                }
+            guard let tempURL else {
+                self.finishInstall(message: "Download failed — try again later.")
+                return
             }
-            DispatchQueue.main.async {
-                self.isDownloading = false
-                if opened {
-                    self.statusMessage = "Update opened — drag BatteryWatts to Applications, then relaunch."
-                } else {
-                    self.statusMessage = "Download failed — opening the releases page instead."
-                    if let releasePage = self.releasePage {
-                        NSWorkspace.shared.open(releasePage)
-                    }
-                }
+            // The download's temp file is deleted when this closure returns,
+            // so move it into our own working directory first.
+            let workDir = FileManager.default.temporaryDirectory
+                .appendingPathComponent("BatteryWattsUpdate-\(UUID().uuidString)")
+            let dmgPath = workDir.appendingPathComponent("update.dmg")
+            do {
+                try FileManager.default.createDirectory(at: workDir, withIntermediateDirectories: true)
+                try FileManager.default.moveItem(at: tempURL, to: dmgPath)
+            } catch {
+                self.finishInstall(message: "Couldn't save the update — try again later.")
+                return
+            }
+            DispatchQueue.global(qos: .userInitiated).async {
+                self.performInstall(dmg: dmgPath, workDir: workDir)
             }
         }.resume()
+    }
+
+    private func performInstall(dmg: URL, workDir: URL) {
+        let fm = FileManager.default
+
+        // Verify against the sha256 GitHub publishes for the release asset.
+        if let expected = expectedSHA256, !expected.isEmpty,
+           let data = try? Data(contentsOf: dmg) {
+            let actual = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+            if actual.lowercased() != expected.lowercased() {
+                try? fm.removeItem(at: workDir)
+                finishInstall(message: "Update failed verification and was not installed.")
+                return
+            }
+        }
+
+        DispatchQueue.main.async { self.statusMessage = "Installing update…" }
+
+        let mountPoint = workDir.appendingPathComponent("mount")
+        try? fm.createDirectory(at: mountPoint, withIntermediateDirectories: true)
+
+        guard run("/usr/bin/hdiutil", ["attach", dmg.path, "-nobrowse", "-noverify", "-quiet",
+                                       "-mountpoint", mountPoint.path]) == 0 else {
+            fallbackToManual(dmg: dmg, message: "Couldn't open the update image.")
+            return
+        }
+
+        let mountedApp = mountPoint.appendingPathComponent("BatteryWatts.app")
+        let destination = Bundle.main.bundleURL
+        let staging = destination.deletingLastPathComponent()
+            .appendingPathComponent(".BatteryWatts-update.app")
+
+        var swapped = false
+        if fm.fileExists(atPath: mountedApp.path) {
+            do {
+                try? fm.removeItem(at: staging)
+                try fm.copyItem(at: mountedApp, to: staging)
+                // Strip quarantine so the updated app launches without a
+                // Gatekeeper prompt (we verified the checksum ourselves).
+                run("/usr/bin/xattr", ["-dr", "com.apple.quarantine", staging.path])
+                try fm.removeItem(at: destination)
+                try fm.moveItem(at: staging, to: destination)
+                swapped = true
+            } catch {
+                try? fm.removeItem(at: staging)
+            }
+        }
+
+        run("/usr/bin/hdiutil", ["detach", mountPoint.path, "-quiet"])
+
+        guard swapped else {
+            fallbackToManual(dmg: dmg, message: "Couldn't replace the app automatically.")
+            return
+        }
+
+        try? fm.removeItem(at: workDir)
+
+        DispatchQueue.main.async {
+            self.isInstalling = false
+            self.statusMessage = "Installed — relaunching…"
+            let relaunch = Process()
+            relaunch.executableURL = URL(fileURLWithPath: "/bin/sh")
+            relaunch.arguments = ["-c", "sleep 1; /usr/bin/open \"\(destination.path)\""]
+            try? relaunch.run()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                NSApplication.shared.terminate(nil)
+            }
+        }
+    }
+
+    /// Last resort: hand the DMG to the user the old way.
+    private func fallbackToManual(dmg: URL, message: String) {
+        let fm = FileManager.default
+        var openURL = dmg
+        if let downloads = fm.urls(for: .downloadsDirectory, in: .userDomainMask).first {
+            let dest = downloads.appendingPathComponent(dmgURL?.lastPathComponent ?? "BatteryWatts.dmg")
+            try? fm.removeItem(at: dest)
+            if (try? fm.copyItem(at: dmg, to: dest)) != nil {
+                openURL = dest
+            }
+        }
+        NSWorkspace.shared.open(openURL)
+        finishInstall(message: message + " Drag BatteryWatts to Applications to finish.")
+    }
+
+    private func finishInstall(message: String?) {
+        DispatchQueue.main.async {
+            self.isInstalling = false
+            if let message { self.statusMessage = message }
+        }
+    }
+
+    @discardableResult
+    private func run(_ tool: String, _ arguments: [String]) -> Int32 {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: tool)
+        process.arguments = arguments
+        do { try process.run() } catch { return -1 }
+        process.waitUntilExit()
+        return process.terminationStatus
     }
 
     static func isVersion(_ candidate: String, newerThan current: String) -> Bool {
