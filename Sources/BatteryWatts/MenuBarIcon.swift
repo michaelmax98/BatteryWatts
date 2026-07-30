@@ -31,6 +31,8 @@ struct BatteryGlyph: View {
     let snapshot: BatterySnapshot
     let mode: MenuBarDisplayMode
     let darkMenuBar: Bool
+    let warn: Int
+    let critical: Int
 
     private let bodyHeight: CGFloat = 13
     private let cornerRadius: CGFloat = 4
@@ -45,8 +47,6 @@ struct BatteryGlyph: View {
     }
 
     private var baseColor: Color { darkMenuBar ? .white : .black }
-    private var chargeGreen: Color { Color(red: 0.20, green: 0.78, blue: 0.35) }
-    private var lowRed: Color { Color(red: 1.00, green: 0.23, blue: 0.19) }
 
     var body: some View {
         HStack(spacing: 1.5) {
@@ -140,27 +140,24 @@ struct BatteryGlyph: View {
     }
 
     private var fillColor: Color {
-        switch snapshot.state {
-        case .noBattery:
-            return baseColor.opacity(0.5)
-        case .charging, .charged, .pluggedIdle:
-            return chargeGreen
-        case .discharging:
-            return snapshot.percent <= 20 ? lowRed : baseColor
-        }
+        PowerAccent.iconFill(for: snapshot, warn: warn, critical: critical, neutral: baseColor)
     }
 }
 
 struct MenuBarLabel: View {
     @ObservedObject var monitor: PowerMonitor
     @AppStorage(DefaultsKey.menuBarDisplayMode) private var displayModeRaw = MenuBarDisplayMode.percent.rawValue
+    @AppStorage(DefaultsKey.warnThreshold) private var warnThreshold = 20
+    @AppStorage(DefaultsKey.criticalThreshold) private var criticalThreshold = 10
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         let glyph = BatteryGlyph(
             snapshot: monitor.snapshot,
             mode: MenuBarDisplayMode(rawValue: displayModeRaw) ?? .percent,
-            darkMenuBar: colorScheme == .dark
+            darkMenuBar: colorScheme == .dark,
+            warn: warnThreshold,
+            critical: criticalThreshold
         )
         if let image = renderedImage(for: glyph) {
             Image(nsImage: image)

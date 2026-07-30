@@ -19,6 +19,8 @@ func formatMinutes(_ minutes: Int) -> String {
 
 struct WidgetContent: View {
     @ObservedObject var monitor: PowerMonitor
+    @AppStorage(DefaultsKey.warnThreshold) private var warnThreshold = 20
+    @AppStorage(DefaultsKey.criticalThreshold) private var criticalThreshold = 10
 
     var body: some View {
         Group {
@@ -36,7 +38,7 @@ struct WidgetContent: View {
     private var batteryLayout: some View {
         let snap = monitor.snapshot
         return HStack(spacing: 16) {
-            BatteryRing(percent: snap.percent, state: snap.state)
+            BatteryRing(snapshot: snap, warn: warnThreshold, critical: criticalThreshold)
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
@@ -75,14 +77,7 @@ struct WidgetContent: View {
     }
 
     private func heroColor(for snap: BatterySnapshot) -> Color {
-        switch snap.state {
-        case .charging:
-            return .green
-        case .discharging:
-            return .primary
-        case .charged, .pluggedIdle, .noBattery:
-            return .secondary
-        }
+        PowerAccent.accent(for: snap, warn: warnThreshold, critical: criticalThreshold)
     }
 
     private func caption(for snap: BatterySnapshot) -> String {
@@ -96,7 +91,14 @@ struct WidgetContent: View {
     }
 
     private func captionColor(for snap: BatterySnapshot) -> Color {
-        snap.state == .charging ? .green : .secondary
+        switch snap.state {
+        case .charging:
+            return PowerAccent.green
+        case .discharging where snap.percent <= warnThreshold:
+            return PowerAccent.accent(for: snap, warn: warnThreshold, critical: criticalThreshold)
+        default:
+            return .secondary
+        }
     }
 
     private func timeText(for snap: BatterySnapshot) -> String? {
@@ -124,8 +126,12 @@ struct WidgetContent: View {
 // MARK: - Battery percentage ring
 
 struct BatteryRing: View {
-    let percent: Int
-    let state: PowerState
+    let snapshot: BatterySnapshot
+    let warn: Int
+    let critical: Int
+
+    private var percent: Int { snapshot.percent }
+    private var state: PowerState { snapshot.state }
 
     private var progress: CGFloat {
         max(0.02, min(1, CGFloat(percent) / 100))
@@ -155,13 +161,6 @@ struct BatteryRing: View {
     }
 
     private var ringColor: Color {
-        switch state {
-        case .charging, .charged:
-            return .green
-        default:
-            if percent <= 10 { return .red }
-            if percent <= 20 { return .orange }
-            return .primary
-        }
+        PowerAccent.accent(for: snapshot, warn: warn, critical: critical)
     }
 }

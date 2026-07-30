@@ -6,6 +6,9 @@ struct MenuPanelView: View {
     @ObservedObject var monitor: PowerMonitor
     @ObservedObject private var updater = UpdateChecker.shared
     @AppStorage(DefaultsKey.menuBarDisplayMode) private var displayModeRaw = MenuBarDisplayMode.percent.rawValue
+    @AppStorage(DefaultsKey.warnThreshold) private var warnThreshold = 20
+    @AppStorage(DefaultsKey.criticalThreshold) private var criticalThreshold = 10
+    @AppStorage(DefaultsKey.lowBatteryGlow) private var lowBatteryGlow = true
     @State private var launchAtLogin = false
 
     // SMAppService needs a real bundle; hide the toggle under `swift run`.
@@ -41,6 +44,25 @@ struct MenuPanelView: View {
                             updateLoginItem(enabled)
                         }
                 }
+            }
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Low battery")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                thresholdRow(label: "Warn", color: PowerAccent.orange, value: $warnThreshold, range: 15...50)
+                thresholdRow(label: "Critical", color: PowerAccent.red, value: $criticalThreshold, range: 5...45)
+                Toggle("Glow screen edges when low", isOn: $lowBatteryGlow)
+                    .toggleStyle(.switch)
+                    .controlSize(.mini)
+            }
+            .onChange(of: warnThreshold) { newValue in
+                if criticalThreshold >= newValue { criticalThreshold = max(5, newValue - 5) }
+            }
+            .onChange(of: criticalThreshold) { newValue in
+                if newValue >= warnThreshold { warnThreshold = min(50, newValue + 5) }
             }
 
             updateSection
@@ -119,6 +141,20 @@ struct MenuPanelView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
+        }
+    }
+
+    private func thresholdRow(label: String, color: Color, value: Binding<Int>, range: ClosedRange<Int>) -> some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(color)
+                .frame(width: 7, height: 7)
+            Text("\(label) at \(value.wrappedValue)%")
+                .font(.caption)
+            Spacer()
+            Stepper("", value: value, in: range, step: 5)
+                .labelsHidden()
+                .controlSize(.mini)
         }
     }
 

@@ -18,6 +18,9 @@ struct BatteryWattsApp: App {
 
 enum DefaultsKey {
     static let menuBarDisplayMode = "menuBarDisplayMode"
+    static let warnThreshold = "warnThreshold"
+    static let criticalThreshold = "criticalThreshold"
+    static let lowBatteryGlow = "lowBatteryGlow"
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -26,5 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
         // Kick off the periodic update check (no-op under `swift run`).
         _ = UpdateChecker.shared
+        // Watch battery level for the low-battery screen-edge glow.
+        GlowController.shared.start()
     }
 }
