@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build DMG and publish
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=0.0.0-ci${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install packaging tools
+        run: brew install librsvg create-dmg
+
+      - name: Generate app icon
+        run: bash scripts/make-icon.sh
+
+      - name: Build app bundle
+        run: VERSION="${{ steps.version.outputs.version }}" bash build-app.sh
+
+      - name: Package DMG
+        run: bash scripts/make-dmg.sh "${{ steps.version.outputs.version }}"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BatteryWatts-dmg
+          path: dist/*.dmg
+
+      - name: Publish GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" dist/*.dmg \
+            --title "BatteryWatts ${GITHUB_REF_NAME#v}" \
+            --generate-notes

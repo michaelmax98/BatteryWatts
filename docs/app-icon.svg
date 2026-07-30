@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a4356"/>
+      <stop offset="1" stop-color="#1b202c"/>
+    </linearGradient>
+    <linearGradient id="fillg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5ee07a"/>
+      <stop offset="1" stop-color="#27b347"/>
+    </linearGradient>
+  </defs>
+
+  <!-- macOS rounded-square canvas -->
+  <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#bg)"/>
+  <rect x="100" y="100" width="824" height="824" rx="186" fill="none" stroke="#ffffff" stroke-opacity="0.06" stroke-width="6"/>
+
+  <!-- battery case -->
+  <rect x="242" y="392" width="470" height="240" rx="52" fill="none" stroke="#f2f4f8" stroke-width="30"/>
+  <!-- nub -->
+  <rect x="742" y="462" width="52" height="100" rx="22" fill="#f2f4f8"/>
+  <!-- charge fill -->
+  <rect x="284" y="434" width="300" height="156" rx="30" fill="url(#fillg)"/>
+
+  <!-- bolt -->
+  <path d="M 560 340 L 468 528 L 528 528 L 488 684 L 606 476 L 542 476 Z"
+        fill="#ffe14d" stroke="#0e1116" stroke-width="14" stroke-linejoin="round"/>
+</svg>

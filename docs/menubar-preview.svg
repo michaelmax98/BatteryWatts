@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="380" viewBox="0 0 640 380" role="img" aria-label="BatteryWatts menu bar preview: a retro battery icon showing 84 percent in the macOS menu bar, with the dropdown panel open showing 8.4 watts drawn from the battery, a battery ring, and 4 hours 32 minutes left">
+  <defs>
+    <linearGradient id="desk" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2b3a67"/>
+      <stop offset="0.55" stop-color="#3d2b5f"/>
+      <stop offset="1" stop-color="#1c2541"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="640" height="380" rx="24" fill="url(#desk)"/>
+
+  <!-- menu bar -->
+  <rect x="0" y="0" width="640" height="30" rx="0" fill="#14161c" fill-opacity="0.78"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" fill="#e8e8ec">
+    <circle cx="466" cy="15" r="5.5" fill="none" stroke="#c9c9cf" stroke-width="1.6"/>
+    <circle cx="466" cy="15" r="1.6" fill="#c9c9cf"/>
+
+    <!-- retro battery icon with percentage inside -->
+    <g transform="translate(492,8.5)">
+      <rect x="0" y="0" width="33" height="13" rx="3.5" fill="none" stroke="#e8e8ec" stroke-width="1.2"/>
+      <rect x="2" y="2" width="24.4" height="9" rx="1.5" fill="#32d74b" fill-opacity="0.4"/>
+      <text x="16.5" y="10" text-anchor="middle" font-size="9" font-weight="700" fill="#ffffff">84</text>
+      <rect x="34.5" y="4" width="2.5" height="5" rx="1" fill="#c9c9cf"/>
+    </g>
+
+    <text x="556" y="19.5" font-size="12.5" fill="#e8e8ec">Thu 2:41 PM</text>
+  </g>
+
+  <!-- dropdown panel -->
+  <g transform="translate(298,40)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+    <rect width="324" height="300" rx="16" fill="#1f1f22" fill-opacity="0.94"/>
+    <rect x="0.5" y="0.5" width="323" height="299" rx="15.5" fill="none" stroke="#ffffff" stroke-opacity="0.10"/>
+
+    <!-- ring at 84% -->
+    <circle cx="52" cy="56" r="30.5" fill="none" stroke="#ffffff" stroke-opacity="0.13" stroke-width="7"/>
+    <circle cx="52" cy="56" r="30.5" fill="none" stroke="#f5f5f7" stroke-width="7" stroke-linecap="round"
+            stroke-dasharray="161 191.6" transform="rotate(-90 52 56)"/>
+    <text x="52" y="61" text-anchor="middle" font-size="15" font-weight="600" fill="#f5f5f7">84%</text>
+
+    <!-- hero -->
+    <text x="102" y="52" font-size="34" font-weight="600" fill="#f5f5f7">8.4</text>
+    <text x="164" y="52" font-size="17" font-weight="500" fill="#98989d">W</text>
+    <text x="102" y="72" font-size="11.5" font-weight="500" fill="#98989d">On battery</text>
+    <text x="102" y="94" font-size="11" fill="#98989d">🕐 4h 32m left</text>
+
+    <line x1="14" y1="112" x2="310" y2="112" stroke="#ffffff" stroke-opacity="0.10"/>
+
+    <!-- segmented picker -->
+    <text x="14" y="132" font-size="11" fill="#98989d">Battery icon shows</text>
+    <rect x="14" y="140" width="296" height="24" rx="6" fill="#ffffff" fill-opacity="0.08"/>
+    <rect x="113" y="142" width="98" height="20" rx="5" fill="#5e5e63"/>
+    <text x="63" y="155" text-anchor="middle" font-size="11" fill="#c9c9cf">Nothing</text>
+    <text x="162" y="155" text-anchor="middle" font-size="11" font-weight="600" fill="#ffffff">Percentage</text>
+    <text x="261" y="155" text-anchor="middle" font-size="11" fill="#c9c9cf">Time left</text>
+
+    <text x="14" y="188" font-size="11" fill="#c9c9cf">Launch at login</text>
+    <rect x="270" y="177" width="30" height="16" rx="8" fill="#32d74b"/>
+    <circle cx="292" cy="185" r="6.5" fill="#ffffff"/>
+
+    <line x1="14" y1="206" x2="310" y2="206" stroke="#ffffff" stroke-opacity="0.10"/>
+
+    <!-- update row -->
+    <rect x="14" y="218" width="130" height="22" rx="6" fill="#ffffff" fill-opacity="0.10"/>
+    <text x="79" y="232.5" text-anchor="middle" font-size="11" fill="#e8e8ec">Check for Updates</text>
+    <text x="310" y="232.5" text-anchor="end" font-size="10" fill="#98989d">v1.0.0</text>
+
+    <line x1="14" y1="252" x2="310" y2="252" stroke="#ffffff" stroke-opacity="0.10"/>
+
+    <text x="14" y="274" font-size="10.5" fill="#98989d">12.09 V · −0.69 A</text>
+    <text x="14" y="288" font-size="10.5" fill="#98989d">Battery health 93% · 214 cycles</text>
+    <rect x="262" y="264" width="48" height="22" rx="6" fill="#ffffff" fill-opacity="0.10"/>
+    <text x="286" y="278.5" text-anchor="middle" font-size="11" fill="#e8e8ec">Quit</text>
+  </g>
+</svg>
