@@ -91,7 +91,11 @@ struct MenuPanelView: View {
                     .disabled(updater.isInstalling)
                 }
                 if let status = updater.statusMessage {
-                    Text(status).font(.caption2).foregroundStyle(.secondary)
+                    Text(status)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
         } else if let current = updater.currentVersion {
@@ -108,7 +112,11 @@ struct MenuPanelView: View {
                         .foregroundStyle(.secondary)
                 }
                 if let status = updater.statusMessage {
-                    Text(status).font(.caption2).foregroundStyle(.secondary)
+                    Text(status)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
