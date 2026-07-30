@@ -15,7 +15,7 @@
 [![Latest release](https://img.shields.io/github/v/release/michaelmax98/BatteryWatts?label=latest&color=2ea44f)](https://github.com/michaelmax98/BatteryWatts/releases/latest)
 [![CI](https://github.com/michaelmax98/BatteryWatts/actions/workflows/ci.yml/badge.svg)](https://github.com/michaelmax98/BatteryWatts/actions/workflows/ci.yml)
 
-A retro iPod-style battery icon sits in your menu bar. Click it for the live panel: charge/discharge wattage, battery percentage ring, time to full or time remaining, charger wattage, battery health, and cycle count.
+A clean, flat, iOS-style battery icon sits in your menu bar. Click it for the live panel: charge/discharge wattage, battery percentage ring, time to full or time remaining, charger wattage, battery health, and cycle count.
 
 ## Install
 
@@ -30,7 +30,7 @@ Requires macOS 13 Ventura or later. No special permissions — battery data is r
 ## Features
 
 - **Live battery wattage** — positive and green while charging (energy flowing into the battery), and the real-time draw while on battery. Read from IOKit's instantaneous amperage × voltage at 1 Hz.
-- **Retro battery icon** — old-school iOS/iPod style with a solid green fill (red when low). Choose what it displays inside: **nothing**, **percentage**, or **predicted time left** (time to full while charging).
+- **iOS-style battery icon** — modern and flat, with the reading punched into the battery shape. Choose what it shows inside: **nothing**, **percentage** (like `75`), **time remaining** (like `6h35m`; time to full while charging), or **live watts** (into the battery when plugged in, being drawn from it when not). Green while on power, red when low.
 - **Time estimates** — time to full / time remaining, same numbers as the system battery menu.
 - **Details panel** — charger wattage, volts × amps, battery health, cycle count.
 - **In-app updates** — the app checks this repo's Releases page and can download and open the new version for you.
