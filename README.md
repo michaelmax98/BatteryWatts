@@ -2,16 +2,24 @@
 
 **A tiny macOS menu bar app that shows — live, every second — how much power is flowing into (or out of) your MacBook's battery.**
 
-[![Latest release](https://img.shields.io/github/v/release/michaelmax98/BatteryWatts?label=download&color=2ea44f)](https://github.com/michaelmax98/BatteryWatts/releases/latest)
-[![CI](https://github.com/michaelmax98/BatteryWatts/actions/workflows/ci.yml/badge.svg)](https://github.com/michaelmax98/BatteryWatts/actions/workflows/ci.yml)
+<p align="center">
+  <a href="https://github.com/michaelmax98/BatteryWatts/releases/latest/download/BatteryWatts.dmg">
+    <img src="docs/download-button.svg" width="270" alt="Download BatteryWatts for macOS (DMG)">
+  </a>
+  <br>
+  <sub>One click, direct download · macOS 13+ · free &amp; open source · <a href="https://github.com/michaelmax98/BatteryWatts/releases/latest">all releases</a></sub>
+</p>
 
 ![BatteryWatts in the menu bar](docs/menubar-preview.svg)
+
+[![Latest release](https://img.shields.io/github/v/release/michaelmax98/BatteryWatts?label=latest&color=2ea44f)](https://github.com/michaelmax98/BatteryWatts/releases/latest)
+[![CI](https://github.com/michaelmax98/BatteryWatts/actions/workflows/ci.yml/badge.svg)](https://github.com/michaelmax98/BatteryWatts/actions/workflows/ci.yml)
 
 A retro iPod-style battery icon sits in your menu bar. Click it for the live panel: charge/discharge wattage, battery percentage ring, time to full or time remaining, charger wattage, battery health, and cycle count.
 
 ## Install
 
-1. **[Download the latest DMG](https://github.com/michaelmax98/BatteryWatts/releases/latest)**
+1. Click the **Download** button above (it always grabs the newest DMG)
 2. Open it and drag **BatteryWatts** into **Applications**
 3. Launch it from Applications — the battery icon appears in your menu bar
 

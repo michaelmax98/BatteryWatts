@@ -46,7 +46,10 @@ jobs:
         run: VERSION="${{ steps.version.outputs.version }}" bash build-app.sh
 
       - name: Package DMG
-        run: bash scripts/make-dmg.sh "${{ steps.version.outputs.version }}"
+        run: |
+          bash scripts/make-dmg.sh "${{ steps.version.outputs.version }}"
+          # Stable-named copy so /releases/latest/download/BatteryWatts.dmg always works
+          cp "dist/BatteryWatts-${{ steps.version.outputs.version }}.dmg" dist/BatteryWatts.dmg
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
