@@ -10,6 +10,7 @@ struct MenuPanelView: View {
     @AppStorage(DefaultsKey.criticalThreshold) private var criticalThreshold = 10
     @AppStorage(DefaultsKey.lowBatteryGlow) private var lowBatteryGlow = true
     @AppStorage(DefaultsKey.glowWidth) private var glowWidth = 1.0
+    @AppStorage(DefaultsKey.plugInCelebration) private var plugInCelebration = true
     @State private var launchAtLogin = false
 
     // SMAppService needs a real bundle; hide the toggle under `swift run`.
@@ -67,6 +68,22 @@ struct MenuPanelView: View {
                             .controlSize(.mini)
                     }
                 }
+                Toggle("Plug-in celebration", isOn: $plugInCelebration)
+                    .toggleStyle(.switch)
+                    .controlSize(.mini)
+                HStack(spacing: 6) {
+                    Text("Test")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Button("Warn") { GlowController.shared.test(.warning) }
+                    Button("Critical") { GlowController.shared.test(.critical) }
+                    Button("Plug-in") { GlowController.shared.test(.plugged) }
+                    Spacer()
+                    Text("esc ends")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+                .controlSize(.mini)
             }
             .onChange(of: warnThreshold) { newValue in
                 if criticalThreshold >= newValue { criticalThreshold = max(5, newValue - 5) }

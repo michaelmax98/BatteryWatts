@@ -36,15 +36,8 @@ struct BatteryGlyph: View {
 
     private let bodyHeight: CGFloat = 13
     private let cornerRadius: CGFloat = 4
-
-    private var bodyWidth: CGFloat {
-        switch mode {
-        case .nothing: return 25
-        case .percent: return 27
-        case .time: return 38
-        case .watts: return 36
-        }
-    }
+    // One fixed size for every display mode so the menu bar never shifts.
+    private let bodyWidth: CGFloat = 36
 
     private var baseColor: Color { darkMenuBar ? .white : .black }
 

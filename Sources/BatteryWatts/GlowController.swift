@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import Combine
+import Carbon.HIToolbox
 
 enum GlowLevel: Equatable {
     case warning
@@ -16,8 +17,9 @@ final class GlowState: ObservableObject {
 /// Shows a soft neon glow around every screen's edges while the battery is
 /// below the configured thresholds — orange at the warning level, red at
 /// critical. When the charger is plugged in mid-glow, the glow flips green,
-/// shimmers for a moment, and fades away. Overlay windows are click-through
-/// and join every Space.
+/// shimmers for a moment, and fades away (toggleable). Test buttons in the
+/// panel preview each effect; Escape ends a preview. Overlay windows are
+/// click-through and join every Space.
 final class GlowController {
     static let shared = GlowController()
 
@@ -27,6 +29,9 @@ final class GlowController {
     private var wasGlowingLow = false
     private var celebrating = false
     private var celebrationToken = 0
+    private var testing = false
+    private var testToken = 0
+    private let escapeHotkey = EscapeHotkey()
 
     private init() {}
 
@@ -53,11 +58,14 @@ final class GlowController {
             .store(in: &cancellables)
     }
 
+    // MARK: - Live evaluation
+
     private func evaluate(_ snapshot: BatterySnapshot) {
         let defaults = UserDefaults.standard
         let enabled = defaults.object(forKey: DefaultsKey.lowBatteryGlow) as? Bool ?? true
         let warn = defaults.object(forKey: DefaultsKey.warnThreshold) as? Int ?? 20
         let critical = defaults.object(forKey: DefaultsKey.criticalThreshold) as? Int ?? 10
+        let celebrationOn = defaults.object(forKey: DefaultsKey.plugInCelebration) as? Bool ?? true
 
         let onPower: Bool
         switch snapshot.state {
@@ -77,21 +85,69 @@ final class GlowController {
         }
 
         if let level {
+            // A real alert always wins over previews and celebrations.
             cancelCelebration()
+            testing = false
+            escapeHotkey.unregister()
             wasGlowingLow = true
             state.fadingOut = false
             state.level = level
             showWindows()
-        } else if onPower && wasGlowingLow {
+        } else if onPower && wasGlowingLow && celebrationOn {
             wasGlowingLow = false
             beginCelebration()
         } else {
             wasGlowingLow = false
-            if !celebrating {
+            if !celebrating && !testing {
                 hideWindows()
             }
         }
     }
+
+    // MARK: - Previews
+
+    func test(_ level: GlowLevel) {
+        switch level {
+        case .plugged:
+            testing = false
+            beginCelebration()
+            armEscape()
+        case .warning, .critical:
+            cancelCelebration()
+            testing = true
+            state.level = level
+            state.fadingOut = false
+            showWindows()
+            armEscape()
+            scheduleTestTimeout()
+        }
+    }
+
+    func endTest() {
+        testing = false
+        testToken += 1
+        cancelCelebration()
+        escapeHotkey.unregister()
+        evaluate(PowerMonitor.shared.snapshot)
+    }
+
+    private func armEscape() {
+        escapeHotkey.onEscape = { [weak self] in
+            self?.endTest()
+        }
+        escapeHotkey.register()
+    }
+
+    private func scheduleTestTimeout() {
+        testToken += 1
+        let token = testToken
+        DispatchQueue.main.asyncAfter(deadline: .now() + 15) { [weak self] in
+            guard let self, self.testToken == token, self.testing else { return }
+            self.endTest()
+        }
+    }
+
+    // MARK: - Celebration
 
     private func beginCelebration() {
         celebrationToken += 1
@@ -107,6 +163,7 @@ final class GlowController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.3) { [weak self] in
             guard let self, self.celebrationToken == token else { return }
             self.celebrating = false
+            self.escapeHotkey.unregister()
             self.hideWindows()
             self.state.fadingOut = false
         }
@@ -116,6 +173,8 @@ final class GlowController {
         celebrationToken += 1
         celebrating = false
     }
+
+    // MARK: - Windows
 
     private func showWindows() {
         guard windows.isEmpty else { return }
@@ -151,6 +210,63 @@ final class GlowController {
         guard !windows.isEmpty else { return }
         hideWindows()
         evaluate(PowerMonitor.shared.snapshot)
+    }
+}
+
+// MARK: - Escape key (registered only while a preview is showing)
+
+/// A system-wide Escape hotkey via Carbon — works without accessibility
+/// permissions, and is registered only for the duration of a glow preview
+/// so it never interferes with normal Escape use.
+final class EscapeHotkey {
+    var onEscape: (() -> Void)?
+
+    private var hotKeyRef: EventHotKeyRef?
+    private var handlerRef: EventHandlerRef?
+
+    func register() {
+        guard hotKeyRef == nil else { return }
+
+        var eventType = EventTypeSpec(
+            eventClass: OSType(kEventClassKeyboard),
+            eventKind: UInt32(kEventHotKeyPressed)
+        )
+        InstallEventHandler(
+            GetEventDispatcherTarget(),
+            { _, _, userData -> OSStatus in
+                guard let userData else { return noErr }
+                let hotkey = Unmanaged<EscapeHotkey>.fromOpaque(userData).takeUnretainedValue()
+                DispatchQueue.main.async {
+                    hotkey.onEscape?()
+                }
+                return noErr
+            },
+            1,
+            &eventType,
+            Unmanaged.passUnretained(self).toOpaque(),
+            &handlerRef
+        )
+
+        let hotKeyID = EventHotKeyID(signature: OSType(0x42574754), id: 1) // "BWGT"
+        RegisterEventHotKey(
+            UInt32(kVK_Escape),
+            0,
+            hotKeyID,
+            GetEventDispatcherTarget(),
+            0,
+            &hotKeyRef
+        )
+    }
+
+    func unregister() {
+        if let hotKeyRef {
+            UnregisterEventHotKey(hotKeyRef)
+            self.hotKeyRef = nil
+        }
+        if let handlerRef {
+            RemoveEventHandler(handlerRef)
+            self.handlerRef = nil
+        }
     }
 }
 

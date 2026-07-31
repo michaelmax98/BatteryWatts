@@ -22,6 +22,7 @@ enum DefaultsKey {
     static let criticalThreshold = "criticalThreshold"
     static let lowBatteryGlow = "lowBatteryGlow"
     static let glowWidth = "glowWidth"
+    static let plugInCelebration = "plugInCelebration"
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
