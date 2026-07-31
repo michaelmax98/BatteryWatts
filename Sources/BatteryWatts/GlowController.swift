@@ -284,15 +284,23 @@ struct GlowView: View {
     }
 
     var body: some View {
-        let width = CGFloat(min(max(glowWidth, 0.5), 2.0))
+        // 0 = barely-there whisper, 1 = bright and bold.
+        let raw = min(max(glowWidth, 0.5), 2.0)
+        let t = (raw - 0.5) / 1.5
+        let ws = CGFloat(0.5 + t * 2.1)
         let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
         ZStack {
-            shape.strokeBorder(color.opacity(0.85), lineWidth: 3 * width).blur(radius: 3 * width)
-            shape.strokeBorder(color.opacity(0.55), lineWidth: 10 * width).blur(radius: 12 * width)
-            shape.strokeBorder(color.opacity(0.30), lineWidth: 24 * width).blur(radius: 30 * width)
+            // crisp neon core line — sharpens and brightens as intensity rises
+            shape.strokeBorder(color.opacity(0.35 + 0.65 * t), lineWidth: CGFloat(2.0 + 3.0 * t))
+                .blur(radius: 1.5)
+            shape.strokeBorder(color.opacity(0.50 + 0.50 * t), lineWidth: 3 * ws).blur(radius: 3 * ws)
+            shape.strokeBorder(color.opacity(0.30 + 0.55 * t), lineWidth: 10 * ws).blur(radius: 12 * ws)
+            shape.strokeBorder(color.opacity(0.15 + 0.45 * t), lineWidth: 24 * ws).blur(radius: 30 * ws)
+            // wide wash that floods inward from the edges when cranked up
+            shape.strokeBorder(color.opacity(0.30 * t), lineWidth: 70 * ws).blur(radius: 70 * ws)
         }
         .padding(1)
-        .opacity(pulsing ? 1.0 : (state.level == .plugged ? 0.75 : 0.5))
+        .opacity(pulsing ? 1.0 : (state.level == .plugged ? 0.8 : (0.45 + 0.4 * t)))
         .hueRotation(.degrees(pulsing ? (state.level == .plugged ? 25 : 10) : (state.level == .plugged ? -25 : -10)))
         .animation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true), value: pulsing)
         .opacity(state.fadingOut ? 0 : 1)

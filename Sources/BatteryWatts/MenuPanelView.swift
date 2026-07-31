@@ -61,7 +61,7 @@ struct MenuPanelView: View {
                     .controlSize(.mini)
                 if lowBatteryGlow {
                     HStack(spacing: 8) {
-                        Text("Glow width")
+                        Text("Glow intensity")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Slider(value: $glowWidth, in: 0.5...2.0)
