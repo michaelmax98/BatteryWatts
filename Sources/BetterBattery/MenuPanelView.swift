@@ -101,11 +101,13 @@ struct MenuPanelView: View {
                 if newValue >= warnThreshold { warnThreshold = min(50, newValue + 5) }
             }
 
-            updateSection
-
             Divider()
 
             nerdSection
+
+            // Update controls live at the very bottom of the panel — user
+            // preference; keep them here in future layout changes.
+            updateSection
 
             HStack {
                 Spacer()
