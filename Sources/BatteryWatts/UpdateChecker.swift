@@ -160,13 +160,19 @@ final class UpdateChecker: ObservableObject {
             return
         }
 
-        let mountedApp = mountPoint.appendingPathComponent("BatteryWatts.app")
+        // Find whatever app the update image contains — the app may be
+        // renamed between versions, so never hardcode the bundle name.
+        let mountedApp = (try? fm.contentsOfDirectory(at: mountPoint, includingPropertiesForKeys: nil))?
+            .first { $0.pathExtension == "app" }
         let destination = Bundle.main.bundleURL
         let staging = destination.deletingLastPathComponent()
             .appendingPathComponent(".BatteryWatts-update.app")
 
         var swapped = false
-        if fm.fileExists(atPath: mountedApp.path) {
+        var installedURL = destination
+        if let mountedApp {
+            let finalURL = destination.deletingLastPathComponent()
+                .appendingPathComponent(mountedApp.lastPathComponent)
             do {
                 try? fm.removeItem(at: staging)
                 try fm.copyItem(at: mountedApp, to: staging)
@@ -174,7 +180,11 @@ final class UpdateChecker: ObservableObject {
                 // Gatekeeper prompt (we verified the checksum ourselves).
                 run("/usr/bin/xattr", ["-dr", "com.apple.quarantine", staging.path])
                 try fm.removeItem(at: destination)
-                try fm.moveItem(at: staging, to: destination)
+                if finalURL != destination {
+                    try? fm.removeItem(at: finalURL)
+                }
+                try fm.moveItem(at: staging, to: finalURL)
+                installedURL = finalURL
                 swapped = true
             } catch {
                 try? fm.removeItem(at: staging)
@@ -190,12 +200,13 @@ final class UpdateChecker: ObservableObject {
 
         try? fm.removeItem(at: workDir)
 
+        let relaunchURL = installedURL
         DispatchQueue.main.async {
             self.isInstalling = false
             self.statusMessage = "Installed — relaunching…"
             let relaunch = Process()
             relaunch.executableURL = URL(fileURLWithPath: "/bin/sh")
-            relaunch.arguments = ["-c", "sleep 1; /usr/bin/open \"\(destination.path)\""]
+            relaunch.arguments = ["-c", "sleep 1; /usr/bin/open \"\(relaunchURL.path)\""]
             try? relaunch.run()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 NSApplication.shared.terminate(nil)
@@ -215,7 +226,7 @@ final class UpdateChecker: ObservableObject {
             }
         }
         NSWorkspace.shared.open(openURL)
-        finishInstall(message: message + " Drag BatteryWatts to Applications to finish.")
+        finishInstall(message: message + " Drag the app to Applications to finish.")
     }
 
     private func finishInstall(message: String?) {
