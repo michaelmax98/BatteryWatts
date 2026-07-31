@@ -31,10 +31,18 @@ struct BatterySnapshot: Equatable {
     static let empty = BatterySnapshot()
 }
 
-struct PowerSample: Equatable {
+struct PowerSample: Equatable, Codable {
     let time: Date
     let percent: Int
     let watts: Double
+    let temperature: Double?
+}
+
+struct HealthPoint: Equatable, Codable {
+    let date: Date
+    let healthPercent: Int?
+    let cycleCount: Int?
+    let rawFullmAh: Int?
 }
 
 final class PowerMonitor: ObservableObject {
@@ -42,21 +50,29 @@ final class PowerMonitor: ObservableObject {
 
     @Published private(set) var snapshot = BatterySnapshot.empty
     @Published private(set) var history: [PowerSample] = []
+    @Published private(set) var healthLog: [HealthPoint] = []
     @Published private(set) var fans: [FanReading]?
     @Published private(set) var lifetimeDischargeWh: Double = 0
     @Published private(set) var lifetimeChargeWh: Double = 0
+
+    // Session counters — since this app launch.
+    private(set) var sessionDischargeWh: Double = 0
+    private(set) var sessionChargeWh: Double = 0
+    private(set) var sessionDischargeSeconds: Double = 0
 
     private var timer: Timer?
     private var smoothedWatts: Double?
     private var lastSampleAt: Date?
     private let sampleInterval: TimeInterval = 30
-    private let maxSamples = 480   // 4 hours at 30 s
+    private let maxSamples = 20160   // 7 days at 30 s
     private var ticksSincePersist = 0
     private var ticksSinceFans = 5
+    private var samplesSinceSave = 0
 
     private init() {
         lifetimeDischargeWh = UserDefaults.standard.double(forKey: DefaultsKey.lifetimeDischargeWh)
         lifetimeChargeWh = UserDefaults.standard.double(forKey: DefaultsKey.lifetimeChargeWh)
+        loadHistory()
         refresh()
         let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
             self?.refresh()
@@ -97,8 +113,11 @@ final class PowerMonitor: ObservableObject {
         guard snap.state != .noBattery else { return }
         if snap.watts < -0.05 {
             lifetimeDischargeWh += (-snap.watts) / 3600.0
+            sessionDischargeWh += (-snap.watts) / 3600.0
+            sessionDischargeSeconds += 1
         } else if snap.watts > 0.05 {
             lifetimeChargeWh += snap.watts / 3600.0
+            sessionChargeWh += snap.watts / 3600.0
         }
         ticksSincePersist += 1
         if ticksSincePersist >= 60 {
@@ -125,9 +144,61 @@ final class PowerMonitor: ObservableObject {
             return
         }
         lastSampleAt = now
-        history.append(PowerSample(time: now, percent: snap.percent, watts: snap.watts))
+        history.append(PowerSample(time: now, percent: snap.percent, watts: snap.watts, temperature: snap.temperatureC))
         if history.count > maxSamples {
             history.removeFirst(history.count - maxSamples)
+        }
+
+        // Snapshot battery health roughly once a day for the trend chart.
+        if snap.healthPercent != nil || snap.cycleCount != nil {
+            let due = healthLog.last.map { now.timeIntervalSince($0.date) > 24 * 3600 } ?? true
+            if due {
+                healthLog.append(HealthPoint(
+                    date: now,
+                    healthPercent: snap.healthPercent,
+                    cycleCount: snap.cycleCount,
+                    rawFullmAh: snap.rawFullmAh
+                ))
+            }
+        }
+
+        samplesSinceSave += 1
+        if samplesSinceSave >= 10 {   // every ~5 minutes
+            samplesSinceSave = 0
+            saveHistory()
+        }
+    }
+
+    // MARK: - Disk persistence (survives relaunches)
+
+    private struct HistoryStore: Codable {
+        var samples: [PowerSample]
+        var healthLog: [HealthPoint]
+    }
+
+    private static var storeURL: URL {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory
+        return base
+            .appendingPathComponent("BetterBattery", isDirectory: true)
+            .appendingPathComponent("history.json")
+    }
+
+    private func loadHistory() {
+        guard let data = try? Data(contentsOf: Self.storeURL),
+              let store = try? JSONDecoder().decode(HistoryStore.self, from: data) else { return }
+        let cutoff = Date().addingTimeInterval(-7 * 24 * 3600)
+        history = store.samples.filter { $0.time >= cutoff }
+        healthLog = store.healthLog
+    }
+
+    private func saveHistory() {
+        let store = HistoryStore(samples: history, healthLog: healthLog)
+        let url = Self.storeURL
+        DispatchQueue.global(qos: .utility).async {
+            guard let data = try? JSONEncoder().encode(store) else { return }
+            try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try? data.write(to: url, options: .atomic)
         }
     }
 

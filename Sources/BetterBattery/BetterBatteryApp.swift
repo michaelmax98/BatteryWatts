@@ -27,6 +27,10 @@ enum DefaultsKey {
     static let showNerdStats = "showNerdStats"
     static let lifetimeDischargeWh = "lifetimeDischargeWh"
     static let lifetimeChargeWh = "lifetimeChargeWh"
+    static let historyWindow = "historyWindow"
+    static let showTempOverlay = "showTempOverlay"
+    static let showSettingsSection = "showSettingsSection"
+    static let showLowBatterySection = "showLowBatterySection"
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate {

@@ -21,9 +21,39 @@ struct NerdStatsView: View {
                 fansTile
                 electricalTile(snap)
                 healthTile(snap)
+                sessionTile
+                adapterTile(snap)
             }
             capacityTile(snap)
             lifetimeTile(snap)
+        }
+    }
+
+    private var sessionTile: some View {
+        let hours = monitor.sessionDischargeSeconds / 3600
+        let average = hours > 0.01 ? monitor.sessionDischargeWh / hours : 0
+        return tile(icon: "hourglass", tint: .purple, title: "Session") {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(String(format: "%.1f Wh", monitor.sessionDischargeWh))
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
+                Text(average > 0 ? String(format: "avg %.1f W draw", average) : "no battery time yet")
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func adapterTile(_ snap: BatterySnapshot) -> some View {
+        tile(icon: "powerplug", tint: PowerAccent.green, title: "Adapter") {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(snap.adapterWatts.map { "\($0) W" } ?? "—")
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
+                Text(snap.adapterWatts != nil ? "connected" : "unplugged")
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 

@@ -5,6 +5,10 @@ BatteryWatts.
 
 ## Conventions that must hold
 
+- **Panel layout order**: hero readout → history charts → collapsible chip
+  sections (Settings / Low Battery / Stats for Nerds, all using the
+  `SectionHeader` component) → update controls + Quit anchored at the bottom.
+
 - **Update controls stay at the very bottom of the panel** (just above Quit) —
   explicit user preference; do not move them in layout changes.
 - **Never change `CFBundleIdentifier`** (`com.batterywatts.app`, the pre-rename
