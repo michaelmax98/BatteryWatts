@@ -9,6 +9,7 @@ struct MenuPanelView: View {
     @AppStorage(DefaultsKey.warnThreshold) private var warnThreshold = 20
     @AppStorage(DefaultsKey.criticalThreshold) private var criticalThreshold = 10
     @AppStorage(DefaultsKey.lowBatteryGlow) private var lowBatteryGlow = true
+    @AppStorage(DefaultsKey.glowWidth) private var glowWidth = 1.0
     @State private var launchAtLogin = false
 
     // SMAppService needs a real bundle; hide the toggle under `swift run`.
@@ -57,6 +58,15 @@ struct MenuPanelView: View {
                 Toggle("Glow screen edges when low", isOn: $lowBatteryGlow)
                     .toggleStyle(.switch)
                     .controlSize(.mini)
+                if lowBatteryGlow {
+                    HStack(spacing: 8) {
+                        Text("Glow width")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Slider(value: $glowWidth, in: 0.5...2.0)
+                            .controlSize(.mini)
+                    }
+                }
             }
             .onChange(of: warnThreshold) { newValue in
                 if criticalThreshold >= newValue { criticalThreshold = max(5, newValue - 5) }

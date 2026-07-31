@@ -4,13 +4,11 @@
 
 <p align="center">
   <a href="https://github.com/michaelmax98/BatteryWatts/releases/latest/download/BatteryWatts.dmg">
-    <img src="docs/download-button.svg" width="270" alt="Download BatteryWatts for macOS (DMG)">
+    <img src="docs/download-button.svg" width="232" alt="Download for macOS (DMG)">
   </a>
   <br>
-  <sub>One click, direct download · macOS 13+ · free &amp; open source · <a href="https://github.com/michaelmax98/BatteryWatts/releases/latest">all releases</a></sub>
+  <sub>Direct download · macOS 13+ · free &amp; open source · <a href="https://github.com/michaelmax98/BatteryWatts/releases/latest">all releases</a></sub>
 </p>
-
-![BatteryWatts in the menu bar](docs/menubar-preview.svg)
 
 [![Latest release](https://img.shields.io/github/v/release/michaelmax98/BatteryWatts?label=latest&color=2ea44f)](https://github.com/michaelmax98/BatteryWatts/releases/latest)
 [![CI](https://github.com/michaelmax98/BatteryWatts/actions/workflows/ci.yml/badge.svg)](https://github.com/michaelmax98/BatteryWatts/actions/workflows/ci.yml)
