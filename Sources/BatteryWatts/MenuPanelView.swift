@@ -179,77 +179,49 @@ struct MenuPanelView: View {
 
     @ViewBuilder
     private var nerdSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             Button {
-                showNerdStats.toggle()
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: showNerdStats ? "chevron.down" : "chevron.right")
-                        .font(.system(size: 9, weight: .semibold))
-                    Text("Stats for nerds")
-                        .font(.caption)
+                withAnimation(.easeOut(duration: 0.2)) {
+                    showNerdStats.toggle()
                 }
-                .foregroundStyle(.secondary)
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "atom")
+                        .font(.system(size: 11, weight: .bold))
+                    Text("Stats for Nerds")
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    Spacer()
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(showNerdStats ? 0 : -90))
+                }
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [PowerAccent.blue, PowerAccent.green],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .padding(.vertical, 6)
+                .padding(.horizontal, 9)
+                .background(
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [PowerAccent.blue.opacity(0.12), PowerAccent.green.opacity(0.12)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                )
             }
             .buttonStyle(.plain)
 
             if showNerdStats && monitor.snapshot.state != .noBattery {
-                VStack(alignment: .leading, spacing: 3) {
-                    if let temperature = monitor.snapshot.temperatureC {
-                        nerdRow("Temperature", String(format: "%.1f °C", temperature))
-                    }
-                    if let fansText {
-                        nerdRow("Fans", fansText)
-                    }
-                    nerdRow("Electrical", electricalLine)
-                    if let capacityText {
-                        nerdRow("Capacity", capacityText)
-                    }
-                    if let healthLine {
-                        nerdRow("Health", healthLine)
-                    }
-                    nerdRow("Lifetime energy", lifetimeText)
-                }
-                .font(.caption2.monospacedDigit())
+                NerdStatsView(monitor: monitor)
             }
         }
-    }
-
-    private func nerdRow(_ label: String, _ value: String) -> some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(label)
-                .foregroundStyle(.tertiary)
-            Spacer()
-            Text(value)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.trailing)
-        }
-    }
-
-    private var fansText: String? {
-        guard let fans = monitor.fans else { return nil }
-        if fans.isEmpty { return "None (fanless)" }
-        if fans.allSatisfy({ $0.rpm < 50 }) { return "Off" }
-        return fans.map { String(format: "%.0f rpm", $0.rpm) }.joined(separator: " · ")
-    }
-
-    private var capacityText: String? {
-        let snap = monitor.snapshot
-        guard let full = snap.rawFullmAh else { return nil }
-        var text: String
-        if let current = snap.rawCurrentmAh {
-            text = "\(current) / \(full) mAh"
-        } else {
-            text = "\(full) mAh full"
-        }
-        if let design = snap.designmAh {
-            text += " · design \(design)"
-        }
-        return text
-    }
-
-    private var lifetimeText: String {
-        String(format: "%.1f Wh out · %.1f Wh in", monitor.lifetimeDischargeWh, monitor.lifetimeChargeWh)
     }
 
     private func openBatterySettings() {
@@ -275,21 +247,6 @@ struct MenuPanelView: View {
             Stepper("", value: value, in: range, step: 5)
                 .labelsHidden()
                 .controlSize(.mini)
-        }
-    }
-
-    private var electricalLine: String {
-        let snap = monitor.snapshot
-        return String(format: "%.2f V · %.2f A", snap.voltage, snap.amperage)
-    }
-
-    private var healthLine: String? {
-        let snap = monitor.snapshot
-        switch (snap.healthPercent, snap.cycleCount) {
-        case let (health?, cycles?): return "\(health)% · \(cycles) cycles"
-        case let (health?, nil): return "\(health)%"
-        case let (nil, cycles?): return "\(cycles) cycles"
-        default: return nil
         }
     }
 

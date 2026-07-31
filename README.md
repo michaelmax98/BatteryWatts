@@ -34,7 +34,7 @@ Requires macOS 13 Ventura or later. No special permissions — battery data is r
 - **Time estimates** — time to full / time remaining, same numbers as the system battery menu.
 - **History charts** — the panel graphs the last few hours: battery level as an area chart, or charge/discharge wattage as bars around a zero line (green into the battery, blue drawn from it). Click the chart to switch views.
 - **Charge limit aware** — pairs with macOS Tahoe 26.4's native 80–95% charge limit: one click opens the Battery setting, and the panel shows when charging is being held.
-- **Stats for nerds** — a collapsible section with battery temperature, fan speeds, volts × amps, raw capacities (current / full / design mAh), health and cycles, and all-time energy in and out of the battery.
+- **Stats for nerds** — a collapsible grid of live tiles: battery temperature with a gauge, a fan that actually spins at the real RPM, volts × amps, capacity bar (current / full / design mAh), color-coded health and cycles, and lifetime energy — measured since install plus an estimate from your battery's cycle history, translated into how long it could power the average U.S. home.
 - **In-app updates** — the app checks this repo's Releases page and can download and open the new version for you.
 - Native SwiftUI, light/dark aware, no Dock icon, optional Launch at Login.
 
