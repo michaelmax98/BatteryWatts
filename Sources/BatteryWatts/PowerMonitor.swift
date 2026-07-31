@@ -27,13 +27,23 @@ struct BatterySnapshot: Equatable {
     static let empty = BatterySnapshot()
 }
 
+struct PowerSample: Equatable {
+    let time: Date
+    let percent: Int
+    let watts: Double
+}
+
 final class PowerMonitor: ObservableObject {
     static let shared = PowerMonitor()
 
     @Published private(set) var snapshot = BatterySnapshot.empty
+    @Published private(set) var history: [PowerSample] = []
 
     private var timer: Timer?
     private var smoothedWatts: Double?
+    private var lastSampleAt: Date?
+    private let sampleInterval: TimeInterval = 30
+    private let maxSamples = 480   // 4 hours at 30 s
 
     private init() {
         refresh()
@@ -66,6 +76,20 @@ final class PowerMonitor: ObservableObject {
         snap.smoothedWatts = smoothedWatts ?? snap.watts
 
         snapshot = snap
+        recordSample(from: snap)
+    }
+
+    private func recordSample(from snap: BatterySnapshot) {
+        guard snap.state != .noBattery else { return }
+        let now = Date()
+        if let last = lastSampleAt, now.timeIntervalSince(last) < sampleInterval {
+            return
+        }
+        lastSampleAt = now
+        history.append(PowerSample(time: now, percent: snap.percent, watts: snap.watts))
+        if history.count > maxSamples {
+            history.removeFirst(history.count - maxSamples)
+        }
     }
 
     // MARK: - IORegistry (AppleSmartBattery): live volts × amps
