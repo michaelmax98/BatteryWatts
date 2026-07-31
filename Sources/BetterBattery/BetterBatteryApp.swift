@@ -2,7 +2,7 @@ import SwiftUI
 import AppKit
 
 @main
-struct BatteryWattsApp: App {
+struct BetterBatteryApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var monitor = PowerMonitor.shared
 

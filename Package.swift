@@ -2,17 +2,17 @@
 import PackageDescription
 
 let package = Package(
-    name: "BatteryWatts",
+    name: "BetterBattery",
     platforms: [
         .macOS(.v13)
     ],
     products: [
-        .executable(name: "BatteryWatts", targets: ["BatteryWatts"])
+        .executable(name: "BetterBattery", targets: ["BetterBattery"])
     ],
     targets: [
         .executableTarget(
-            name: "BatteryWatts",
-            path: "Sources/BatteryWatts",
+            name: "BetterBattery",
+            path: "Sources/BetterBattery",
             linkerSettings: [
                 .linkedFramework("IOKit"),
                 .linkedFramework("ServiceManagement")

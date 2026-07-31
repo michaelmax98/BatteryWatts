@@ -1,27 +1,27 @@
-# BatteryWatts
+# BetterBattery
 
 **A tiny macOS menu bar app that shows — live, every second — how much power is flowing into (or out of) your MacBook's battery.**
 
 <p align="center">
-  <a href="https://github.com/michaelmax98/BatteryWatts/releases/latest/download/BatteryWatts.dmg">
+  <a href="https://github.com/michaelmax98/BetterBattery/releases/latest/download/BetterBattery.dmg">
     <img src="docs/download-button.svg" width="232" alt="Download for macOS (DMG)">
   </a>
   <br>
-  <sub>Direct download · macOS 13+ · free &amp; open source · <a href="https://github.com/michaelmax98/BatteryWatts/releases/latest">all releases</a></sub>
+  <sub>Direct download · macOS 13+ · free &amp; open source · <a href="https://github.com/michaelmax98/BetterBattery/releases/latest">all releases</a></sub>
 </p>
 
-[![Latest release](https://img.shields.io/github/v/release/michaelmax98/BatteryWatts?label=latest&color=2ea44f)](https://github.com/michaelmax98/BatteryWatts/releases/latest)
-[![CI](https://github.com/michaelmax98/BatteryWatts/actions/workflows/ci.yml/badge.svg)](https://github.com/michaelmax98/BatteryWatts/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/michaelmax98/BetterBattery?label=latest&color=2ea44f)](https://github.com/michaelmax98/BetterBattery/releases/latest)
+[![CI](https://github.com/michaelmax98/BetterBattery/actions/workflows/ci.yml/badge.svg)](https://github.com/michaelmax98/BetterBattery/actions/workflows/ci.yml)
 
 A clean, flat, iOS-style battery icon sits in your menu bar. Click it for the live panel: charge/discharge wattage, battery percentage ring, time to full or time remaining, charger wattage, battery health, and cycle count.
 
 ## Install
 
 1. Click the **Download** button above (it always grabs the newest DMG)
-2. Open it and drag **BatteryWatts** into **Applications**
+2. Open it and drag **BetterBattery** into **Applications**
 3. Launch it from Applications — the battery icon appears in your menu bar
 
-> **First launch on a fresh download:** releases aren't notarized with a paid Apple Developer ID (yet), so macOS may block the first open. If double-clicking shows a warning, go to **System Settings → Privacy & Security**, scroll down to the "BatteryWatts was blocked" notice, and click **Open Anyway** (on older macOS versions, right-click the app → **Open** works too). This is only needed once.
+> **First launch on a fresh download:** releases aren't notarized with a paid Apple Developer ID (yet), so macOS may block the first open. If double-clicking shows a warning, go to **System Settings → Privacy & Security**, scroll down to the "BetterBattery was blocked" notice, and click **Open Anyway** (on older macOS versions, right-click the app → **Open** works too). This is only needed once.
 
 Requires macOS 13 Ventura or later. No special permissions — battery data is read from public IOKit properties.
 
@@ -40,15 +40,15 @@ Requires macOS 13 Ventura or later. No special permissions — battery data is r
 
 ## Updates
 
-BatteryWatts checks GitHub for a new release every few hours (and there's a **Check for Updates** button in the panel). When one is available, click **Install Update** — the app downloads the new version, verifies it against the sha256 GitHub publishes for the release, swaps itself in place, and relaunches. One click, no dragging.
+BetterBattery checks GitHub for a new release every few hours (and there's a **Check for Updates** button in the panel). When one is available, click **Install Update** — the app downloads the new version, verifies it against the sha256 GitHub publishes for the release, swaps itself in place, and relaunches. One click, no dragging.
 
 ## Build from source
 
 ```bash
-git clone https://github.com/michaelmax98/BatteryWatts.git
-cd BatteryWatts
+git clone https://github.com/michaelmax98/BetterBattery.git
+cd BetterBattery
 swift run -c release      # run it directly
-./build-app.sh            # or build build/BatteryWatts.app
+./build-app.sh            # or build build/BetterBattery.app
 ```
 
 Releases are built by [GitHub Actions](.github/workflows/release.yml): pushing a `v*` tag compiles the app on a macOS runner, packages the DMG, and publishes it to the Releases page.

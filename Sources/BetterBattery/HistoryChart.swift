@@ -37,7 +37,7 @@ struct HistoryChart: View {
             .controlSize(.mini)
 
             if monitor.history.count < 2 {
-                Text("Collecting data — the chart fills in as BatteryWatts runs.")
+                Text("Collecting data — the chart fills in as BetterBattery runs.")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, minHeight: 56)

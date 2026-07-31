@@ -48,13 +48,13 @@ jobs:
       - name: Package DMG
         run: |
           bash scripts/make-dmg.sh "${{ steps.version.outputs.version }}"
-          # Stable-named copy so /releases/latest/download/BatteryWatts.dmg always works
-          cp "dist/BatteryWatts-${{ steps.version.outputs.version }}.dmg" dist/BatteryWatts.dmg
+          # Stable-named copy so /releases/latest/download/BetterBattery.dmg always works
+          cp "dist/BetterBattery-${{ steps.version.outputs.version }}.dmg" dist/BetterBattery.dmg
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: BatteryWatts-dmg
+          name: BetterBattery-dmg
           path: dist/*.dmg
 
       - name: Publish GitHub release
@@ -66,5 +66,5 @@ jobs:
           TAG="v${VERSION}"
           gh release create "$TAG" dist/*.dmg \
             --target "${GITHUB_SHA}" \
-            --title "BatteryWatts ${VERSION}" \
+            --title "BetterBattery ${VERSION}" \
             --generate-notes

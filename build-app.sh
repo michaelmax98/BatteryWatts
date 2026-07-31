@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds a standalone BatteryWatts.app into ./build
+# Builds a standalone BetterBattery.app into ./build
 # Version can be overridden: VERSION=1.2.0 ./build-app.sh
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -8,11 +8,11 @@ VERSION="${VERSION:-1.0.0}"
 
 swift build -c release
 
-APP="build/BatteryWatts.app"
+APP="build/BetterBattery.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 
-cp ".build/release/BatteryWatts" "$APP/Contents/MacOS/BatteryWatts"
+cp ".build/release/BetterBattery" "$APP/Contents/MacOS/BetterBattery"
 cp "Support/Info.plist" "$APP/Contents/Info.plist"
 
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP/Contents/Info.plist"

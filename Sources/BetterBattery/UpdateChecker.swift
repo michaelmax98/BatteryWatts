@@ -8,7 +8,7 @@ import CryptoKit
 /// app bundle, strip quarantine, and relaunch — one click, no dragging.
 final class UpdateChecker: ObservableObject {
     static let shared = UpdateChecker()
-    static let repoSlug = "michaelmax98/BatteryWatts"
+    static let repoSlug = "michaelmax98/BetterBattery"
 
     @Published private(set) var availableVersion: String?
     @Published private(set) var releasePage: URL?
@@ -120,7 +120,7 @@ final class UpdateChecker: ObservableObject {
             // The download's temp file is deleted when this closure returns,
             // so move it into our own working directory first.
             let workDir = FileManager.default.temporaryDirectory
-                .appendingPathComponent("BatteryWattsUpdate-\(UUID().uuidString)")
+                .appendingPathComponent("BetterBatteryUpdate-\(UUID().uuidString)")
             let dmgPath = workDir.appendingPathComponent("update.dmg")
             do {
                 try FileManager.default.createDirectory(at: workDir, withIntermediateDirectories: true)
@@ -166,7 +166,7 @@ final class UpdateChecker: ObservableObject {
             .first { $0.pathExtension == "app" }
         let destination = Bundle.main.bundleURL
         let staging = destination.deletingLastPathComponent()
-            .appendingPathComponent(".BatteryWatts-update.app")
+            .appendingPathComponent(".BetterBattery-update.app")
 
         var swapped = false
         var installedURL = destination
@@ -219,7 +219,7 @@ final class UpdateChecker: ObservableObject {
         let fm = FileManager.default
         var openURL = dmg
         if let downloads = fm.urls(for: .downloadsDirectory, in: .userDomainMask).first {
-            let dest = downloads.appendingPathComponent(dmgURL?.lastPathComponent ?? "BatteryWatts.dmg")
+            let dest = downloads.appendingPathComponent(dmgURL?.lastPathComponent ?? "BetterBattery.dmg")
             try? fm.removeItem(at: dest)
             if (try? fm.copyItem(at: dmg, to: dest)) != nil {
                 openURL = dest
