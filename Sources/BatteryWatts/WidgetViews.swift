@@ -85,7 +85,7 @@ struct WidgetContent: View {
         case .charging: return "Charging · into battery"
         case .discharging: return "On battery"
         case .charged: return "Fully charged"
-        case .pluggedIdle: return "Plugged in · not charging"
+        case .pluggedIdle: return "Plugged in · charging on hold"
         case .noBattery: return ""
         }
     }

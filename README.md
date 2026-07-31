@@ -33,7 +33,8 @@ Requires macOS 13 Ventura or later. No special permissions — battery data is r
 - **Low-battery alerts** — configurable warning and critical percentages, plus an optional pulsing neon glow around the screen edges (orange, then red) so a dying battery is impossible to miss. When the charger lands mid-glow, an optional green celebration shimmer fades it out. Test buttons preview every effect — press Esc to end a preview.
 - **Time estimates** — time to full / time remaining, same numbers as the system battery menu.
 - **History charts** — the panel graphs the last few hours: battery level as an area chart, or charge/discharge wattage as bars around a zero line (green into the battery, blue drawn from it). Click the chart to switch views.
-- **Details panel** — charger wattage, volts × amps, battery health, cycle count.
+- **Charge limit aware** — pairs with macOS Tahoe 26.4's native 80–95% charge limit: one click opens the Battery setting, and the panel shows when charging is being held.
+- **Stats for nerds** — a collapsible section with battery temperature, fan speeds, volts × amps, raw capacities (current / full / design mAh), health and cycles, and all-time energy in and out of the battery.
 - **In-app updates** — the app checks this repo's Releases page and can download and open the new version for you.
 - Native SwiftUI, light/dark aware, no Dock icon, optional Launch at Login.
 

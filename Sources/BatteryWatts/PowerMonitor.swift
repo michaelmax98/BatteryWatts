@@ -23,6 +23,10 @@ struct BatterySnapshot: Equatable {
     var adapterWatts: Int?           // negotiated adapter power while plugged in
     var healthPercent: Int?          // full-charge capacity vs design capacity
     var cycleCount: Int?
+    var temperatureC: Double?        // battery temperature
+    var rawCurrentmAh: Int?          // raw charge, mAh
+    var rawFullmAh: Int?             // raw full-charge capacity, mAh
+    var designmAh: Int?              // design capacity, mAh
 
     static let empty = BatterySnapshot()
 }
@@ -38,14 +42,21 @@ final class PowerMonitor: ObservableObject {
 
     @Published private(set) var snapshot = BatterySnapshot.empty
     @Published private(set) var history: [PowerSample] = []
+    @Published private(set) var fans: [FanReading]?
+    @Published private(set) var lifetimeDischargeWh: Double = 0
+    @Published private(set) var lifetimeChargeWh: Double = 0
 
     private var timer: Timer?
     private var smoothedWatts: Double?
     private var lastSampleAt: Date?
     private let sampleInterval: TimeInterval = 30
     private let maxSamples = 480   // 4 hours at 30 s
+    private var ticksSincePersist = 0
+    private var ticksSinceFans = 5
 
     private init() {
+        lifetimeDischargeWh = UserDefaults.standard.double(forKey: DefaultsKey.lifetimeDischargeWh)
+        lifetimeChargeWh = UserDefaults.standard.double(forKey: DefaultsKey.lifetimeChargeWh)
         refresh()
         let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
             self?.refresh()
@@ -77,6 +88,34 @@ final class PowerMonitor: ObservableObject {
 
         snapshot = snap
         recordSample(from: snap)
+        accumulateLifetime(from: snap)
+        refreshFansIfDue()
+    }
+
+    /// Integrate battery power over time into all-time Wh counters (1 Hz).
+    private func accumulateLifetime(from snap: BatterySnapshot) {
+        guard snap.state != .noBattery else { return }
+        if snap.watts < -0.05 {
+            lifetimeDischargeWh += (-snap.watts) / 3600.0
+        } else if snap.watts > 0.05 {
+            lifetimeChargeWh += snap.watts / 3600.0
+        }
+        ticksSincePersist += 1
+        if ticksSincePersist >= 60 {
+            ticksSincePersist = 0
+            UserDefaults.standard.set(lifetimeDischargeWh, forKey: DefaultsKey.lifetimeDischargeWh)
+            UserDefaults.standard.set(lifetimeChargeWh, forKey: DefaultsKey.lifetimeChargeWh)
+        }
+    }
+
+    private func refreshFansIfDue() {
+        ticksSinceFans += 1
+        guard ticksSinceFans >= 5 else { return }
+        ticksSinceFans = 0
+        let readings = SMCFansReader.shared.readFans()
+        if readings != fans {
+            fans = readings
+        }
     }
 
     private func recordSample(from snap: BatterySnapshot) {
@@ -133,6 +172,22 @@ final class PowerMonitor: ObservableObject {
             let health = Int((Double(rawMax) / Double(design) * 100).rounded())
             if health > 0 && health <= 120 {
                 snap.healthPercent = min(health, 100)
+            }
+        }
+        if rawMax > 200 { snap.rawFullmAh = rawMax }
+        if design > 200 { snap.designmAh = design }
+        let rawCurrent = signedInt(props["AppleRawCurrentCapacity"]) ?? 0
+        if rawCurrent > 0 { snap.rawCurrentmAh = rawCurrent }
+
+        // Battery temperature: the registry publishes centi-degrees; some
+        // machines report centi-Kelvin instead, so convert when it's huge.
+        if let rawTemp = signedInt(props["Temperature"]), rawTemp > 0 {
+            var celsius = Double(rawTemp) / 100.0
+            if celsius > 200 {
+                celsius -= 273.15
+            }
+            if celsius > -20 && celsius < 120 {
+                snap.temperatureC = celsius
             }
         }
     }

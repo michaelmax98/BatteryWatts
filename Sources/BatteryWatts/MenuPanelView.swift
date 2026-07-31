@@ -12,6 +12,7 @@ struct MenuPanelView: View {
     @AppStorage(DefaultsKey.glowWidth) private var glowWidth = 1.0
     @AppStorage(DefaultsKey.plugInCelebration) private var plugInCelebration = true
     @AppStorage(DefaultsKey.historyMode) private var historyModeRaw = HistoryMode.charge.rawValue
+    @AppStorage(DefaultsKey.showNerdStats) private var showNerdStats = false
     @State private var launchAtLogin = false
 
     // SMAppService needs a real bundle; hide the toggle under `swift run`.
@@ -49,6 +50,11 @@ struct MenuPanelView: View {
                             updateLoginItem(enabled)
                         }
                 }
+
+                Button("Charge limit & Battery Settings…") {
+                    openBatterySettings()
+                }
+                .controlSize(.mini)
             }
 
             Divider()
@@ -99,17 +105,9 @@ struct MenuPanelView: View {
 
             Divider()
 
-            HStack(alignment: .firstTextBaseline) {
-                if monitor.snapshot.state != .noBattery {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(electricalLine)
-                        if let healthLine {
-                            Text(healthLine)
-                        }
-                    }
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
-                }
+            nerdSection
+
+            HStack {
                 Spacer()
                 Button("Quit") {
                     NSApplication.shared.terminate(nil)
@@ -179,6 +177,93 @@ struct MenuPanelView: View {
         }
     }
 
+    @ViewBuilder
+    private var nerdSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Button {
+                showNerdStats.toggle()
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: showNerdStats ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 9, weight: .semibold))
+                    Text("Stats for nerds")
+                        .font(.caption)
+                }
+                .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+
+            if showNerdStats && monitor.snapshot.state != .noBattery {
+                VStack(alignment: .leading, spacing: 3) {
+                    if let temperature = monitor.snapshot.temperatureC {
+                        nerdRow("Temperature", String(format: "%.1f °C", temperature))
+                    }
+                    if let fansText {
+                        nerdRow("Fans", fansText)
+                    }
+                    nerdRow("Electrical", electricalLine)
+                    if let capacityText {
+                        nerdRow("Capacity", capacityText)
+                    }
+                    if let healthLine {
+                        nerdRow("Health", healthLine)
+                    }
+                    nerdRow("Lifetime energy", lifetimeText)
+                }
+                .font(.caption2.monospacedDigit())
+            }
+        }
+    }
+
+    private func nerdRow(_ label: String, _ value: String) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(label)
+                .foregroundStyle(.tertiary)
+            Spacer()
+            Text(value)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.trailing)
+        }
+    }
+
+    private var fansText: String? {
+        guard let fans = monitor.fans else { return nil }
+        if fans.isEmpty { return "None (fanless)" }
+        if fans.allSatisfy({ $0.rpm < 50 }) { return "Off" }
+        return fans.map { String(format: "%.0f rpm", $0.rpm) }.joined(separator: " · ")
+    }
+
+    private var capacityText: String? {
+        let snap = monitor.snapshot
+        guard let full = snap.rawFullmAh else { return nil }
+        var text: String
+        if let current = snap.rawCurrentmAh {
+            text = "\(current) / \(full) mAh"
+        } else {
+            text = "\(full) mAh full"
+        }
+        if let design = snap.designmAh {
+            text += " · design \(design)"
+        }
+        return text
+    }
+
+    private var lifetimeText: String {
+        String(format: "%.1f Wh out · %.1f Wh in", monitor.lifetimeDischargeWh, monitor.lifetimeChargeWh)
+    }
+
+    private func openBatterySettings() {
+        let candidates = [
+            "x-apple.systempreferences:com.apple.Battery-Settings.extension",
+            "x-apple.systempreferences:com.apple.preference.battery"
+        ]
+        for candidate in candidates {
+            if let url = URL(string: candidate), NSWorkspace.shared.open(url) {
+                return
+            }
+        }
+    }
+
     private func thresholdRow(label: String, color: Color, value: Binding<Int>, range: ClosedRange<Int>) -> some View {
         HStack(spacing: 6) {
             Circle()
@@ -201,8 +286,8 @@ struct MenuPanelView: View {
     private var healthLine: String? {
         let snap = monitor.snapshot
         switch (snap.healthPercent, snap.cycleCount) {
-        case let (health?, cycles?): return "Battery health \(health)% · \(cycles) cycles"
-        case let (health?, nil): return "Battery health \(health)%"
+        case let (health?, cycles?): return "\(health)% · \(cycles) cycles"
+        case let (health?, nil): return "\(health)%"
         case let (nil, cycles?): return "\(cycles) cycles"
         default: return nil
         }

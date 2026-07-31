@@ -24,6 +24,9 @@ enum DefaultsKey {
     static let glowWidth = "glowWidth"
     static let plugInCelebration = "plugInCelebration"
     static let historyMode = "historyMode"
+    static let showNerdStats = "showNerdStats"
+    static let lifetimeDischargeWh = "lifetimeDischargeWh"
+    static let lifetimeChargeWh = "lifetimeChargeWh"
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
