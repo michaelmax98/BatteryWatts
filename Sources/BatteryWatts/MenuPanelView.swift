@@ -11,7 +11,6 @@ struct MenuPanelView: View {
     @AppStorage(DefaultsKey.lowBatteryGlow) private var lowBatteryGlow = true
     @AppStorage(DefaultsKey.glowWidth) private var glowWidth = 1.0
     @AppStorage(DefaultsKey.plugInCelebration) private var plugInCelebration = true
-    @AppStorage(DefaultsKey.showHistory) private var showHistory = false
     @AppStorage(DefaultsKey.historyMode) private var historyModeRaw = HistoryMode.charge.rawValue
     @State private var launchAtLogin = false
 
@@ -130,24 +129,7 @@ struct MenuPanelView: View {
 
     @ViewBuilder
     private var historySection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Button {
-                showHistory.toggle()
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: showHistory ? "chevron.down" : "chevron.right")
-                        .font(.system(size: 9, weight: .semibold))
-                    Text("History")
-                        .font(.caption)
-                }
-                .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.plain)
-
-            if showHistory {
-                HistoryChart(monitor: monitor, modeRaw: $historyModeRaw)
-            }
-        }
+        HistoryChart(monitor: monitor, modeRaw: $historyModeRaw)
     }
 
     @ViewBuilder
