@@ -257,6 +257,15 @@ struct MenuPanelView: View {
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
+                    Button {
+                        if let url = URL(string: "https://buymeacoffee.com/michaelmaxwell") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    } label: {
+                        Image(systemName: "cup.and.saucer.fill")
+                    }
+                    .controlSize(.small)
+                    .help("Enjoying it? Buy me a coffee")
                     Button("Quit") {
                         NSApplication.shared.terminate(nil)
                     }

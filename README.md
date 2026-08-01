@@ -7,7 +7,7 @@
     <img src="docs/download-button.svg" width="232" alt="Download for macOS (DMG)">
   </a>
   <br>
-  <sub>Direct download · macOS 13+ · free &amp; open source · <a href="https://github.com/michaelmax98/BetterBattery/releases/latest">all releases</a></sub>
+  <sub>Direct download · macOS 13+ · free &amp; open source · <a href="https://github.com/michaelmax98/BetterBattery/releases/latest">all releases</a> · <a href="https://buymeacoffee.com/michaelmaxwell">☕ buy me a coffee</a></sub>
 </p>
 
 [![Latest release](https://img.shields.io/github/v/release/michaelmax98/BetterBattery?label=latest&color=2ea44f)](https://github.com/michaelmax98/BetterBattery/releases/latest)
@@ -57,6 +57,10 @@ Releases are built by [GitHub Actions](.github/workflows/release.yml): pushing a
 ## How it reads power
 
 Wattage comes from the `AppleSmartBattery` IORegistry entry (`InstantAmperage` × `Voltage`). Positive means the battery is being charged; negative means it's powering the Mac. Two things that are normal: into-battery watts are lower than your charger's rating (the charger also powers the Mac itself), and ~0 W while plugged in means the battery is full or Optimized Battery Charging is holding it.
+
+## Support
+
+Free and open source. If it earns a spot in your menu bar, you can [buy me a coffee](https://buymeacoffee.com/michaelmaxwell) ☕
 
 ## License
 
