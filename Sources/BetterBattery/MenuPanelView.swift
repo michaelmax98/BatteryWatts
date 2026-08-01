@@ -101,6 +101,12 @@ struct MenuPanelView: View {
             if canManageLoginItem {
                 launchAtLogin = SMAppService.mainApp.status == .enabled
             }
+            // Migrate stored thresholds into the 1–20 band (older versions
+            // allowed up to 50 in steps of 5).
+            if warnThreshold > 20 { warnThreshold = 20 }
+            if warnThreshold < 2 { warnThreshold = 2 }
+            if criticalThreshold >= warnThreshold { criticalThreshold = max(1, warnThreshold - 1) }
+            if criticalThreshold < 1 { criticalThreshold = 1 }
         }
     }
 
@@ -154,8 +160,8 @@ struct MenuPanelView: View {
 
             if showLowBatterySection {
                 VStack(alignment: .leading, spacing: 6) {
-                    thresholdRow(label: "Warn", color: PowerAccent.orange, value: $warnThreshold, range: 15...50)
-                    thresholdRow(label: "Critical", color: PowerAccent.red, value: $criticalThreshold, range: 5...45)
+                    thresholdRow(label: "Warn", color: PowerAccent.orange, value: $warnThreshold, range: 2...20)
+                    thresholdRow(label: "Critical", color: PowerAccent.red, value: $criticalThreshold, range: 1...19)
                     Toggle("Glow screen edges when low", isOn: $lowBatteryGlow)
                         .toggleStyle(.switch)
                         .controlSize(.mini)
@@ -187,10 +193,10 @@ struct MenuPanelView: View {
                 }
                 .padding(.leading, 4)
                 .onChange(of: warnThreshold) { newValue in
-                    if criticalThreshold >= newValue { criticalThreshold = max(5, newValue - 5) }
+                    if criticalThreshold >= newValue { criticalThreshold = max(1, newValue - 1) }
                 }
                 .onChange(of: criticalThreshold) { newValue in
-                    if newValue >= warnThreshold { warnThreshold = min(50, newValue + 5) }
+                    if newValue >= warnThreshold { warnThreshold = min(20, newValue + 1) }
                 }
             }
         }
@@ -278,7 +284,7 @@ struct MenuPanelView: View {
             Text("\(label) at \(value.wrappedValue)%")
                 .font(.caption)
             Spacer()
-            Stepper("", value: value, in: range, step: 5)
+            Stepper("", value: value, in: range, step: 1)
                 .labelsHidden()
                 .controlSize(.mini)
         }
