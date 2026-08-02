@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 import Combine
 import IOKit
 import IOKit.ps
@@ -74,6 +75,21 @@ final class PowerMonitor: ObservableObject {
         lifetimeChargeWh = UserDefaults.standard.double(forKey: DefaultsKey.lifetimeChargeWh)
         loadHistory()
         refresh()
+        startTimer()
+        let center = NSWorkspace.shared.notificationCenter
+        center.addObserver(self, selector: #selector(displaysDidSleep),
+                           name: NSWorkspace.screensDidSleepNotification, object: nil)
+        center.addObserver(self, selector: #selector(displaysDidWake),
+                           name: NSWorkspace.screensDidWakeNotification, object: nil)
+    }
+
+    deinit {
+        timer?.invalidate()
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
+    }
+
+    private func startTimer() {
+        guard timer == nil else { return }
         let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
             self?.refresh()
         }
@@ -81,8 +97,21 @@ final class PowerMonitor: ObservableObject {
         self.timer = timer
     }
 
-    deinit {
+    // Displays off means nobody sees the glyph, panel, or glow: stop the
+    // 1 Hz work entirely. Energy integration is per-tick, so the gap skews
+    // nothing; the charts just show the gap. Flush pending state first so a
+    // sleep that turns into a shutdown loses nothing.
+    @objc private func displaysDidSleep() {
         timer?.invalidate()
+        timer = nil
+        UserDefaults.standard.set(lifetimeDischargeWh, forKey: DefaultsKey.lifetimeDischargeWh)
+        UserDefaults.standard.set(lifetimeChargeWh, forKey: DefaultsKey.lifetimeChargeWh)
+        saveHistory()
+    }
+
+    @objc private func displaysDidWake() {
+        startTimer()
+        refresh()
     }
 
     private func refresh() {

@@ -11,6 +11,10 @@ BatteryWatts.
 
 - **Update controls stay at the very bottom of the panel** (just above Quit) —
   explicit user preference; do not move them in layout changes.
+- **Efficiency is a feature** (explicit user requirement): the menu bar glyph
+  re-renders only when its `cacheKey` changes, and the 1 Hz sampling pauses
+  while displays sleep (with a state flush on pause). Don't add timers, disk
+  writes, or per-tick allocations casually.
 - **Never change `CFBundleIdentifier`** (`com.batterywatts.app`, the pre-rename
   value): UserDefaults (settings, lifetime energy counters) and the
   Launch-at-login registration are keyed to it.

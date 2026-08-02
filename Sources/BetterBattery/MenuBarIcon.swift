@@ -135,6 +135,12 @@ struct BatteryGlyph: View {
     private var fillColor: Color {
         PowerAccent.iconFill(for: snapshot, warn: warn, critical: critical, neutral: baseColor)
     }
+
+    /// Everything that affects the rendered pixels, cheap to compare —
+    /// MenuBarLabel uses this to skip re-rendering identical frames.
+    var cacheKey: String {
+        "\(mode.rawValue)|\(readout ?? "")|\(snapshot.percent)|\(String(describing: snapshot.state))|\(darkMenuBar)|\(warn)|\(critical)"
+    }
 }
 
 struct MenuBarLabel: View {
@@ -159,11 +165,25 @@ struct MenuBarLabel: View {
         }
     }
 
+    private final class RenderCache {
+        var key = ""
+        var image: NSImage?
+    }
+    private static let cache = RenderCache()
+
     private func renderedImage(for glyph: BatteryGlyph) -> NSImage? {
+        // Re-render only when the glyph's visible content changed — at idle
+        // (say, percent mode on a steady charge) the 1 Hz tick draws nothing.
+        let key = glyph.cacheKey
+        if key == Self.cache.key, let cached = Self.cache.image {
+            return cached
+        }
         let renderer = ImageRenderer(content: glyph)
         renderer.scale = max(2, NSScreen.main?.backingScaleFactor ?? 2)
         guard let image = renderer.nsImage else { return nil }
         image.isTemplate = false
+        Self.cache.key = key
+        Self.cache.image = image
         return image
     }
 }
