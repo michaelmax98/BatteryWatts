@@ -96,14 +96,7 @@ struct NerdStatsView: View {
             HStack(spacing: 6) {
                 if let fans = monitor.fans, !fans.isEmpty,
                    let maxRpm = fans.map(\.rpm).max(), maxRpm > 50 {
-                    TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { context in
-                        let time = context.date.timeIntervalSinceReferenceDate
-                        let speed = min(2.5, maxRpm / 2000)
-                        Image(systemName: "fanblades")
-                            .font(.system(size: 15))
-                            .foregroundStyle(PowerAccent.blue)
-                            .rotationEffect(.degrees((time * 360 * speed).truncatingRemainder(dividingBy: 360)))
-                    }
+                    SpinningFanIcon(rpm: maxRpm)
                     Text(fans.map { String(format: "%.0f", $0.rpm) }.joined(separator: " · ") + " rpm")
                         .font(.system(size: 12, weight: .semibold, design: .rounded))
                         .monospacedDigit()
@@ -258,5 +251,46 @@ struct NerdStatsView: View {
         if hours >= 48 { return String(format: "~%.1f days", hours / 24) }
         if hours >= 1 { return String(format: "~%.1f hours", hours) }
         return String(format: "~%.0f minutes", hours * 60)
+    }
+}
+
+/// The `fanblades` glyph, turning continuously while the fans are spinning.
+///
+/// Deliberately *not* a `TimelineView`: that schedule needs SwiftUI to
+/// re-evaluate the view every frame, and it never ticks inside the
+/// `MenuBarExtra(.window)` panel. The icon therefore only redrew when
+/// `PowerMonitor` published — once a second — so it jumped a whole second of
+/// rotation at a time instead of spinning.
+///
+/// A `repeatForever` rotation is handed to the render server once and then
+/// runs without waking SwiftUI per frame, which keeps the open panel smooth
+/// and costs nothing while it is closed (this view isn't rendered at all).
+private struct SpinningFanIcon: View {
+    let rpm: Double
+
+    @State private var angle: Double = 0
+
+    /// Seconds per revolution: a lazy turn when the fans are just ticking
+    /// over, brisker under load, and never quick enough to strobe against the
+    /// glyph's blades.
+    private var period: Double {
+        let raw = min(3.0, max(0.8, 3600 / max(rpm, 1)))
+        // Quantise, so ordinary rpm jitter (2400 → 2408) doesn't restart the
+        // animation. Only a real change in fan speed re-syncs the spin.
+        return (raw / 0.25).rounded() * 0.25
+    }
+
+    var body: some View {
+        Image(systemName: "fanblades")
+            .font(.system(size: 15))
+            .foregroundStyle(PowerAccent.blue)
+            .rotationEffect(.degrees(angle))
+            // Runs on appear and again whenever the quantised speed changes.
+            .task(id: period) {
+                // A full turn ends where it began, so each repeat is seamless.
+                withAnimation(.linear(duration: period).repeatForever(autoreverses: false)) {
+                    angle += 360
+                }
+            }
     }
 }
